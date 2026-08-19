@@ -1,15 +1,14 @@
-# Stage 1: Build the JAR with memory-constrained Maven
+# Stage 1: Ultra-low memory Maven build
 FROM maven:3.8.5-openjdk-17 AS build
 WORKDIR /app
 COPY . .
-# Limit Maven memory usage during compilation
-ENV MAVEN_OPTS="-Xmx256m"
-RUN mvn clean package -DskipTests
+# Restrict Garbage Collection memory overhead and prevent compiler process forking
+ENV MAVEN_OPTS="-Xmx220m -XX:+UseSerialGC"
+RUN mvn clean package -DskipTests -Dmaven.compiler.fork=false
 
-# Stage 2: Run the application with restricted JVM heap
+# Stage 2: Lightweight runtime image
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-# Restrict JVM heap to 256MB to stay safely within Render's 512MB RAM limit
-ENTRYPOINT ["java", "-Xmx256m", "-XX:+UseContainerSupport", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx256m", "-XX:+UseSerialGC", "-XX:+UseContainerSupport", "-jar", "app.jar"]
