@@ -1,0 +1,28 @@
+
+
+services:
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin-user
+    ports:
+      - "9411:9411"
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - zipkin
+    environment:
+      - EUREKA_SERVER_URL=${EUREKA_SERVER_URL:-http://host.docker.internal:8761/eureka/}
+      - ZIPKIN_URI=http://zipkin:9411/api/v2/spans
+      - MYSQL_URL=${MYSQL_URL:-jdbc:mysql://host.docker.internal:3306/user_service_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true}
+      - MYSQL_USER=${MYSQL_USER:-root}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-Vishva&3470}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
