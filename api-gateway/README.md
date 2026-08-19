@@ -1,1 +1,0 @@
-# MiniProject1-RateLimiter-APIGateway
